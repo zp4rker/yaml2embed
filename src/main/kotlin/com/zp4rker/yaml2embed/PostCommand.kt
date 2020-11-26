@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.TextChannel
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 /**
  * @author zp4rker
@@ -14,9 +15,21 @@ import java.io.File
 object PostCommand : Command(aliases = arrayOf("post"), minArgs = 2, mentionedChannels = 1, permission = Permission.MESSAGE_MANAGE) {
 
     override fun handle(args: Array<String>, message: Message, channel: TextChannel) {
-        // TODO: implement
         val fileName = args[0].let { "$it${if (it.endsWith(".yml")) "" else ".yml"}" }
-        val data = YamlEmbed(Yaml().load<Map<String, Any>>(File(fileName).inputStream()))
+        val file = File(fileName)
+
+        if (!file.exists()) {
+            channel.sendMessage(embed {
+                title { text = "Unable to find file!" }
+
+                description = "Could not find file: `$fileName`"
+
+                color = "#ec644b"
+            }).queue { it.delete().queueAfter(3, TimeUnit.SECONDS) }
+            return
+        }
+
+        val data = YamlEmbed(Yaml().load(file.inputStream()))
 
         val embed = embed {
             data.author?.let {
